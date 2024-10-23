@@ -1,68 +1,91 @@
 import requests
 import json
 
-# URL de la API
+# API URL
 url = 'https://vdapi.samsung.com/tvs/tvpersonalize/api/tvapps/appserver/list'
 
-# Parámetros base de la consulta
-params = {
-    'country_code': 'US',
-    'language_code': 'en',
-    'offset': 0,  # Comienza desde el offset 0
-    'size': 100,  # Cambia esto según lo que la API permita
-    'order': 'asc'
-}
+def get_tv_apps(country_code='US', language_code='en', size=100, offset=0):
+    """Fetches the complete list of Samsung TV Store apps, accumulating the offset."""
+    all_apps = []
+    seen_app_ids = set()  # To avoid duplicate apps
 
-# Encabezados de la consulta
-headers = {
-    'Accept': '*/*',
-    'Accept-Language': 'es-ES,es;q=0.7',
-    'Connection': 'keep-alive',
-    'Content-Type': 'application/json',
-    'Origin': 'https://www.samsung.com',
-    'Referer': 'https://www.samsung.com/',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    'Sec-GPC': '1',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-    'sec-ch-ua': '"Brave";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Linux"'
-}
+    while True:
+        params = {
+            'country_code': country_code,
+            'language_code': language_code,
+            'offset': offset,
+            'size': size,
+            'order': 'asc'
+        }
 
-# Inicializa una lista para almacenar todos los resultados
-all_data = []
-offset = 0
+        headers = {
+            'Accept': '*/*',
+            'Accept-Language': f'{language_code}-{country_code},{language_code};q=0.7',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json'
+        }
 
-while True:
-    # Actualiza el offset en los parámetros
-    params['offset'] = offset
-    
-    # Realizar la solicitud GET
-    response = requests.get(url, headers=headers, params=params)
+        try:
+            response = requests.get(url, params=params, headers=headers)
+            response.raise_for_status()  # Raises an error for HTTP status codes other than 200
+            apps_data = response.json()
 
-    # Verificar si la solicitud fue exitosa
-    if response.status_code == 200:
-        # Procesar la respuesta JSON
-        data = response.json()
-        all_data.extend(data.get('apps', []))
-        
-        # Comprueba si hay más datos
-        if len(data.get('apps', [])) < 1:
+            # Check if the response contains 'tvApp'
+            if 'data' in apps_data and 'tvApp' in apps_data['data']:
+                apps = apps_data['data']['tvApp']
+                app_count = apps_data['data']['allCount']
+
+                if not apps:
+                    print("No more apps found.")
+                    break
+
+                # Add only the apps we haven't seen before (using appId)
+                for app in apps:
+                    app_id = app.get('appId')
+                    if app_id not in seen_app_ids:
+                        seen_app_ids.add(app_id)
+                        all_apps.append(app)
+
+                # If fewer apps are returned than requested, we have no more apps
+                if len(apps) < size:
+                    break
+
+                # Increase the offset for the next request
+                offset += size
+            else:
+                print("No apps found in the response.")
+                break
+
+        except requests.RequestException as e:
+            print(f"Error fetching the app list: {e}")
             break
-        
-        # Incrementa el offset
-        offset += 100
+
+    return all_apps
+
+def print_apps(apps_data):
+    """Prints all the fetched app data."""
+    if apps_data:
+        print(f"Total apps fetched: {len(apps_data)}")
+        print("Available apps in Samsung TV Store:")
+        print("-" * 50)
+        for app in apps_data:
+            app_id = app.get('appId', 'Unknown')
+            app_name = app.get('appName', 'Unknown')
+            app_category = app.get('appCategoryName', 'Unknown')
+            app_language = app.get('appLanguage', 'Unknown')
+
+            # Print the app information
+            print(f"App ID: {app_id}, Name: {app_name}, Category: {app_category}, Language: {app_language}")
+        print("-" * 50)
     else:
-        print(f"Error: {response.status_code}, {response.text}")
-        break
+        print("No apps found.")
 
-# Ahora all_data contiene todos los resultados combinados
-print(f"Total de aplicaciones obtenidas: {len(all_data)}")
+if __name__ == '__main__':
+    country = input("Enter country code (default US): ") or 'US'
+    language = input("Enter language code (default en): ") or 'en'
 
-# Guardar el JSON final en a.txt
-with open('a.txt', 'w') as f:
-    json.dump(all_data, f, indent=4)  # Guarda con una indentación de 4 espacios
-
-print("Los datos han sido guardados en a.txt")
+    apps = get_tv_apps(country_code=country, language_code=language)
+    if apps:
+        print_apps(apps)
+    else:
+        print("Error fetching the apps or no data available.")
