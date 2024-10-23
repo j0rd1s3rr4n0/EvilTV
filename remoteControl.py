@@ -79,6 +79,7 @@ class SamsungTVController:
 
     def menu(self):
         """Main menu to interact with the TV."""
+        print(banner)
         while True:
             print("""
 01) Display Device Info
