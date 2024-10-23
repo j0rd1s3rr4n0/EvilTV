@@ -29,12 +29,12 @@ Currently, **EvilTV** supports only **Samsung TVs**, but it is designed to be ex
 
 1. Clone the **EvilTV** repository to your local machine:
    ```bash
-   git clone https://github.com/j0rd1s3rr4n0/evil-tv.git
+   git clone https://github.com/j0rd1s3rr4n0/EvilTV.git
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd evil-tv
+   cd EvilTV
    ```
 
 3. Install the required dependencies:
