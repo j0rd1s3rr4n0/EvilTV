@@ -6,7 +6,7 @@ certifi==2024.8.30
 cffi==1.17.1
 charset-normalizer==3.4.0
 colorama==0.4.6
-cryptography==43.0.1
+cryptography==46.0.5
 frozenlist==1.4.1
 idna==3.10
 multidict==6.1.0
