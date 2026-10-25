@@ -44,6 +44,11 @@ Currently, **EvilTV** supports only **Samsung TVs**, but it is designed to be ex
    pip install -r requirements.txt
    ```
 
+4. (Optional) Run tests to verify installation:
+   ```bash
+   python -m unittest discover -s tests -p "test_*.py"
+   ```
+
 ---
 
 ## 🚀 **Usage**
